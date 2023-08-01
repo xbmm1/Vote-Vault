@@ -1,17 +1,39 @@
+import os
+import json
+from web3 import Web3
+from pathlib import Path
+from dotenv import load_dotenv
 import streamlit as st
-from web3 import Web3, HTTPProvider
-from eth_account import Account
 
-# Define the address and ABI of the deployed Voting contract on the local Ganache test network
-contract_address = "0x......."  # Replace with the actual contract address
-contract_abi = [...]  # Replace with the actual contract ABI
+load_dotenv()
 
-# Connect to the local Ganache test network
-ganache_url = "http://localhost:8545"  # Update with your Ganache URL
-w3 = Web3(HTTPProvider(ganache_url))
+# Define and connect a new Web3 provider
+w3 = Web3(Web3.HTTPProvider(os.getenv("WEB3_PROVIDER_URI")))
 
-# Load the Voting contract
-contract = w3.eth.contract(address=contract_address, abi=contract_abi)
+# Set the default account (use your own account address)
+w3.eth.defaultAccount = "0xbFbF556e9a14B3bfF3b53a746d2FfA2e328E1702"  # Replace with your Ethereum account address
+# Cache the contract on load
+@st.cache(allow_output_mutation=True)
+# Define the load_contract function
+def load_contract():
+
+    # Load Art Gallery ABI
+    with open(Path('./compiled/abi.json')) as f:
+        certificate_abi = json.load(f)
+
+    # Set the contract address (this is the address of the deployed contract)
+    contract_address = os.getenv("SMART_CONTRACT_ADDRESS")
+
+    # Get the contract
+    contract = w3.eth.contract(
+        address=contract_address,
+        abi=certificate_abi
+    )
+    # Return the contract from the function
+    return contract
+
+# Load the contract
+contract = load_contract()
 
 # Streamlit App
 st.title("Voting Ballot")
@@ -21,24 +43,23 @@ name = st.text_input("Enter your Name:")
 age = st.number_input("Enter your Age:", min_value=18, max_value=100)
 vote_choice = st.radio("Vote Choice:", ("Candidate A", "Candidate B", "Candidate C"))
 
-# Submit button to cast the vote
+# Register as a voter
+if st.button("Register as Voter"):
+    if age:
+        tx_hash = contract.functions.registerVoter(age).transact({"from": w3.eth.defaultAccount})
+        st.success("You are now registered as a voter. Transaction Hash: " + tx_hash.hex())
+
+# Cast the vote
 if st.button("Cast Vote"):
-    if name and age and vote_choice:
+    if name and vote_choice:
         # Check if the user is eligible to vote (age >= 18)
         if age >= 18:
             # Cast the vote by calling the contract function
-            account = Account.create()
-            private_key = account.privateKey.hex()
-            nonce = w3.eth.getTransactionCount(account.address)
-            tx = contract.functions.castVote(name, age, vote_choice).buildTransaction({
-                'gas': 2000000,
-                'gasPrice': w3.toWei('40', 'gwei'),
-                'chainId': 5777,  # Replace with the chainId of your network
-                'nonce': nonce,
-            })
-            signed_tx = w3.eth.account.signTransaction(tx, private_key)
-            tx_hash = w3.eth.sendRawTransaction(signed_tx.rawTransaction)
-            st.success("Vote successfully cast! Transaction Hash: " + tx_hash.hex())
+            if not contract.functions.voters(w3.eth.defaultAccount).call():
+                st.error("You must register as a voter first.")
+            else:
+                tx_hash = contract.functions.castVote(vote_choice).transact({"from": w3.eth.defaultAccount})
+                st.success("Vote successfully cast! Transaction Hash: " + tx_hash.hex())
         else:
             st.error("You must be 18 years or older to vote.")
     else:
