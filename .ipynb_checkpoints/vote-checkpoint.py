@@ -11,13 +11,13 @@ load_dotenv()
 w3 = Web3(Web3.HTTPProvider(os.getenv("WEB3_PROVIDER_URI")))
 
 # Set the default account (use your own account address)
-w3.eth.defaultAccount = "0xbFbF556e9a14B3bfF3b53a746d2FfA2e328E1702"  # Replace with your Ethereum account address
+w3.eth.defaultAccount = "0x0BCe3d47FfE720CD3Cc56FE29abEF6E1C42dD8FF"  # Replace with your Ethereum account address
 # Cache the contract on load
-@st.cache(allow_output_mutation=True)
+@st.cache_resource #(allow_output_mutation=True)
 # Define the load_contract function
 def load_contract():
 
-    # Load Art Gallery ABI
+    # Load vote contract ABI
     with open(Path('./compiled/abi.json')) as f:
         certificate_abi = json.load(f)
 
@@ -32,6 +32,10 @@ def load_contract():
     # Return the contract from the function
     return contract
 
+# Check if session state exists, if not, create an empty dictionary
+if "session_state" not in st.session_state:
+    st.session_state.session_state = {}
+    
 # Load the contract
 contract = load_contract()
 
@@ -64,3 +68,30 @@ if st.button("Cast Vote"):
             st.error("You must be 18 years or older to vote.")
     else:
         st.error("Please fill in all the information before casting your vote.")
+        
+# Create a button in the sidebar to log in as an admin
+if not st.session_state.get("logged_in"):
+    admin_username = st.sidebar.text_input("Username")
+    admin_password = st.sidebar.text_input("Password", type="password")
+
+    # Check if the admin credentials are correct (you should implement your own validation logic here)
+    if admin_username == "admin" and admin_password == "admin123":
+        st.session_state.logged_in = True
+        st.success("Login successful! You are now logged in as an admin.")
+    else:
+        st.error("Invalid credentials. Please try again.")
+
+# If logged in as an admin, display the results or any other admin-specific content here
+if st.session_state.get("logged_in"):
+    st.subheader("Voting Results")
+    # Add code to display the voting results
+
+    # Button to trigger vote count function
+    if st.button("Get Vote Count"):
+        vote_counts = {}
+        candidates = ["Candidate A", "Candidate B", "Candidate C"]
+        for candidate in candidates:
+            vote_counts[candidate] = contract.functions.voteCount(candidate).call()
+        st.write("Vote Counts:")
+        for candidate, count in vote_counts.items():
+            st.write(f"{candidate}: {count}")
