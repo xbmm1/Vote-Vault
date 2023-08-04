@@ -12,7 +12,7 @@ load_dotenv()
 w3 = Web3(Web3.HTTPProvider(os.getenv("WEB3_PROVIDER_URI")))
 
 # Streamlit App
-st.title("Voting Ballot")
+st.title("Voting Vault")
 
 # Set the default account (use your own account address)
 # Input Ethereum Account Address
@@ -136,3 +136,6 @@ if st.session_state.get("logged_in"):
         results_df.to_csv(csv_file_name, index=False)
         st.success(f"Voting results saved to '{csv_file_name}'.")
     
+# Load the image from a local file
+image_path = "images/voteA.png"  # Replace with the actual path to your image
+st.image(image_path, width=5, use_column_width=True)
