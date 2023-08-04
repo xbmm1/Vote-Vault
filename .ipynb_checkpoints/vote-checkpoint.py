@@ -12,7 +12,7 @@ load_dotenv()
 w3 = Web3(Web3.HTTPProvider(os.getenv("WEB3_PROVIDER_URI")))
 
 # Streamlit App
-st.title("Voting Vault")
+st.title("Vote Vault")
 
 # Set the default account (use your own account address)
 # Input Ethereum Account Address
