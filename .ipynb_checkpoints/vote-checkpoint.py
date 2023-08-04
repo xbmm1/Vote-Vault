@@ -11,7 +11,10 @@ load_dotenv()
 w3 = Web3(Web3.HTTPProvider(os.getenv("WEB3_PROVIDER_URI")))
 
 # Set the default account (use your own account address)
-w3.eth.defaultAccount = "0x0251224033eAC627bA58948f63AF0f7b9958CA57"  # Replace with your Ethereum account address
+# Input Ethereum Account Address
+eth_account_address = st.text_input("Enter Your Ethereum Account Address (Ganache Account):")
+w3.eth.defaultAccount = eth_account_address
+#w3.eth.defaultAccount = "0x0251224033eAC627bA58948f63AF0f7b9958CA57"  # Replace with your Ethereum account address
 # Cache the contract on load
 @st.cache_resource #(allow_output_mutation=True)
 # Define the load_contract function
@@ -45,13 +48,15 @@ st.title("Voting Ballot")
 # Input fields for user information
 name = st.text_input("Enter your Name:")
 age = st.number_input("Enter your Age:", min_value=18, max_value=100)
-vote_choice = st.radio("Vote Choice:", ("Candidate A", "Candidate B", "Candidate C"))
+
 
 # Register as a voter
 if st.button("Register as Voter"):
     if age:
         tx_hash = contract.functions.registerVoter(age).transact({"from": w3.eth.defaultAccount})
         st.success("You are now registered as a voter. Transaction Hash: " + tx_hash.hex())
+
+vote_choice = st.radio("Vote Choice:", ("Candidate A", "Candidate B", "Candidate C"))
 
 # Cast the vote
 if st.button("Cast Vote"):
@@ -79,7 +84,7 @@ if not st.session_state.get("logged_in"):
         st.session_state.logged_in = True
         st.success("Login successful! You are now logged in as an admin.")
     else:
-        st.error("Invalid credentials. Please try again.")
+        st.success("Please login to view results.")
 
 # If logged in as an admin, display the results or any other admin-specific content here
 if st.session_state.get("logged_in"):
