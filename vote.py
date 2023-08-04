@@ -4,17 +4,23 @@ from web3 import Web3
 from pathlib import Path
 from dotenv import load_dotenv
 import streamlit as st
+import pandas as pd 
 
 load_dotenv()
 
 # Define and connect a new Web3 provider
 w3 = Web3(Web3.HTTPProvider(os.getenv("WEB3_PROVIDER_URI")))
 
+# Streamlit App
+st.title("Voting Ballot")
+
 # Set the default account (use your own account address)
 # Input Ethereum Account Address
 eth_account_address = st.text_input("Enter Your Ethereum Account Address (Ganache Account):")
 w3.eth.defaultAccount = eth_account_address
+
 #w3.eth.defaultAccount = "0x0251224033eAC627bA58948f63AF0f7b9958CA57"  # Replace with your Ethereum account address
+
 # Cache the contract on load
 @st.cache_resource #(allow_output_mutation=True)
 # Define the load_contract function
@@ -38,12 +44,13 @@ def load_contract():
 # Check if session state exists, if not, create an empty dictionary
 if "session_state" not in st.session_state:
     st.session_state.session_state = {}
-    
-# Load the contract
-contract = load_contract()
 
-# Streamlit App
-st.title("Voting Ballot")
+# Load the contract
+contract = None
+try:
+    contract = load_contract()
+except ValueError as e:
+    st.error("Error loading contract. Please ensure the Smart Contract Address is valid.")
 
 # Input fields for user information
 name = st.text_input("Enter your Name:")
@@ -69,6 +76,7 @@ if st.button("Cast Vote"):
             else:
                 tx_hash = contract.functions.castVote(vote_choice).transact({"from": w3.eth.defaultAccount})
                 st.success("Vote successfully cast! Transaction Hash: " + tx_hash.hex())
+                st.balloons()
         else:
             st.error("You must be 18 years or older to vote.")
     else:
@@ -83,20 +91,48 @@ if not st.session_state.get("logged_in"):
     if admin_username == "admin" and admin_password == "admin123":
         st.session_state.logged_in = True
         st.success("Login successful! You are now logged in as an admin.")
+        st.snow()
     else:
-        st.success("Please login to view results.")
+        b = 42#st.success("Please login to view results.")
+        
+def get_results_df():
+    vote_counts = {}
+    candidates = ["Candidate A", "Candidate B", "Candidate C"]
+    for candidate in candidates:
+        vote_counts[candidate] = contract.functions.voteCount(candidate).call()
 
+    # Create a DataFrame to store the results
+    results_df = pd.DataFrame(vote_counts.items(), columns=["Candidate", "Vote Count"])
+    
+    # Save the DataFrame to a CSV file
+    results_df.to_csv("voting_results.csv", index=False)
+    
+    return results_df
+    
 # If logged in as an admin, display the results or any other admin-specific content here
 if st.session_state.get("logged_in"):
     st.subheader("Voting Results")
     # Add code to display the voting results
-
+    
+    # Define a variable to store the voting results DataFrame
+    results_df = None
+    
     # Button to trigger vote count function
     if st.button("Get Vote Count"):
-        vote_counts = {}
-        candidates = ["Candidate A", "Candidate B", "Candidate C"]
-        for candidate in candidates:
-            vote_counts[candidate] = contract.functions.voteCount(candidate).call()
+        results_df = get_results_df()
+
+        # Display the voting results as a bar chart
+        st.bar_chart(results_df.set_index("Candidate"))
+
+        # Display the vote counts as text
         st.write("Vote Counts:")
-        for candidate, count in vote_counts.items():
+        for candidate, count in results_df.values:
             st.write(f"{candidate}: {count}")
+        
+    # Button to save results to CSV
+    if st.button("Save Results to CSV") and results_df is not None:
+        
+        # Save the results to the custom CSV file name provided by the user
+        results_df.to_csv(csv_file_name, index=False)
+        st.success(f"Voting results saved to '{csv_file_name}'.")
+    
