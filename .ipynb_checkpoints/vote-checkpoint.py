@@ -11,7 +11,7 @@ load_dotenv()
 w3 = Web3(Web3.HTTPProvider(os.getenv("WEB3_PROVIDER_URI")))
 
 # Set the default account (use your own account address)
-w3.eth.defaultAccount = "0x0BCe3d47FfE720CD3Cc56FE29abEF6E1C42dD8FF"  # Replace with your Ethereum account address
+w3.eth.defaultAccount = "0x0251224033eAC627bA58948f63AF0f7b9958CA57"  # Replace with your Ethereum account address
 # Cache the contract on load
 @st.cache_resource #(allow_output_mutation=True)
 # Define the load_contract function
