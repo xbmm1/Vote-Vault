@@ -13,5 +13,5 @@
 
 * This program allows for a user to login in as a admin to view vote results and save them as a CSV file.
 
-![alt=""](Images/voteA.png)
-![alt=""](Images/logoA.png)
+![alt=""](/Images/voteA.png)
+![alt=""](/Images/logoA.png)
