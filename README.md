@@ -13,5 +13,6 @@
 
 * This program allows for a user to login in as a admin to view vote results and save them as a CSV file.
 
-![alt=""](/Images/voteA.png)
-![alt=""](/Images/logoA.png)
+![picture 1](Images/voteA.png)
+![picture 2](Images/logoA.png)
+![An image shows a wallet with bitcoin.](Images/localhost.png)
